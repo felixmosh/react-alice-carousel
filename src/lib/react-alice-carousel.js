@@ -9,6 +9,8 @@ export default class AliceCarousel extends React.PureComponent {
   constructor(props) {
     super(props)
 
+    this.rootComponent = React.createRef()
+    this.stageComponent = React.createRef()
     const slides = Utils.getSlides(props)
     const clones = Utils.cloneCarouselItems(slides)
 
@@ -45,8 +47,8 @@ export default class AliceCarousel extends React.PureComponent {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.autoHeight && this.stageComponent && !this.state.initialStageHeight) {
-      const initialStageHeight = Utils.getGalleryItemHeight(this.stageComponent, this.props, this.state)
+    if (this.props.autoHeight && this.stageComponent.current && !this.state.initialStageHeight) {
+      const initialStageHeight = Utils.getGalleryItemHeight(this.stageComponent.current, this.props, this.state)
       this.setState({ initialStageHeight })
     }
 
@@ -70,7 +72,7 @@ export default class AliceCarousel extends React.PureComponent {
       this.props.isRTL !== prevProps.isRTL
     ) {
       this._resetAllIntermediateProps()
-      this.setState(Utils.calculateInitialProps(this.props, this.stageComponent))
+      this.setState(Utils.calculateInitialProps(this.props, this.stageComponent.current))
     }
 
     if (this.props.keysControlDisabled !== prevProps.keysControlDisabled) {
@@ -144,7 +146,7 @@ export default class AliceCarousel extends React.PureComponent {
 
   _setupSwipeHandlers() {
     this.swiper = new VanillaSwipe({
-      element: this.rootComponent,
+      element: this.rootComponent.current,
       delta: this.props.swipeDelta,
       onSwiping: this._throttledOnTouchMove,
       onSwiped: this._onTouchEnd,
@@ -160,7 +162,7 @@ export default class AliceCarousel extends React.PureComponent {
 
   _handleOnWindowResize = (e) => {
     const { shouldHandleResizeEvent } = this.props
-    const currentDimensions = Utils.getElementDimensions(this.rootComponent)
+    const currentDimensions = Utils.getElementDimensions(this.rootComponent.current)
     const shouldProcessEvent = shouldHandleResizeEvent || Utils.shouldHandleResizeEvent
 
     if (shouldProcessEvent(e, this.rootComponentDimensions, currentDimensions)) {
@@ -170,11 +172,11 @@ export default class AliceCarousel extends React.PureComponent {
       const { currentIndex } = this.state
       const isAnimationCanceled = this._isSwipeAnimationProcessing()
       const initialProps = Utils.preserveProps(this.props, { startIndex: currentIndex })
-      const currState = Utils.calculateInitialProps(initialProps, this.stageComponent)
+      const currState = Utils.calculateInitialProps(initialProps, this.stageComponent.current)
       const translate3d = Utils.getTranslate3dPosition(currState.currentIndex, currState)
       const nextState = { ...currState, translate3d, isAnimationCanceled, initialStageHeight: 0 }
 
-      if (isAnimationCanceled) Utils.animate(this.stageComponent, { position: translate3d })
+      if (isAnimationCanceled) Utils.animate(this.stageComponent.current, { position: translate3d })
 
       this.setState(nextState, () => {
         this._resetAllIntermediateProps()
@@ -230,7 +232,7 @@ export default class AliceCarousel extends React.PureComponent {
   }
 
   _onInitialized(initialState) {
-    this.rootComponentDimensions = Utils.getElementDimensions(this.rootComponent)
+    this.rootComponentDimensions = Utils.getElementDimensions(this.rootComponent.current)
 
     if (this.props.onInitialized) {
       this.props.onInitialized(this._getEventObject(initialState))
@@ -244,7 +246,7 @@ export default class AliceCarousel extends React.PureComponent {
   }
 
   _setInitialState() {
-    const initialState = Utils.calculateInitialProps(this.props, this.stageComponent)
+    const initialState = Utils.calculateInitialProps(this.props, this.stageComponent.current)
     this.setState(initialState, this._onInitialized(initialState))
   }
 
@@ -253,14 +255,6 @@ export default class AliceCarousel extends React.PureComponent {
       return { fadeoutAnimationProcessing: false }
     }
     return {}
-  }
-
-  _setRootComponentRef = (node) => {
-    return (this.rootComponent = node)
-  }
-
-  _setStageComponentRef = (node) => {
-    return (this.stageComponent = node)
   }
 
   _allowAnimation = () => {
@@ -407,7 +401,7 @@ export default class AliceCarousel extends React.PureComponent {
 
     if (this.touchEndAnimation) {
       this.touchEndAnimation = false
-      const translateX = Utils.getTranslateX(this.stageComponent)
+      const translateX = Utils.getTranslateX(this.stageComponent.current)
 
       if (translateX) {
         return translateX
@@ -449,7 +443,7 @@ export default class AliceCarousel extends React.PureComponent {
         return
       }
 
-      Utils.animate(this.stageComponent, { position })
+      Utils.animate(this.stageComponent.current, { position })
       this._setSwipePositionProps({ position, direction })
       return
     }
@@ -467,7 +461,7 @@ export default class AliceCarousel extends React.PureComponent {
       }
     }
 
-    Utils.animate(this.stageComponent, { position })
+    Utils.animate(this.stageComponent.current, { position })
     this._setSwipePositionProps({ position, direction })
 
     function recalculatePosition() {
@@ -505,7 +499,7 @@ export default class AliceCarousel extends React.PureComponent {
       return
     }
 
-    Utils.animate(this.stageComponent, {
+    Utils.animate(this.stageComponent.current, {
       position: translateXPosition,
       duration,
       transitionTimingFunction,
@@ -521,7 +515,7 @@ export default class AliceCarousel extends React.PureComponent {
         const nextItemIndex = Utils.getNextItemIndexBeforeTouchEnd(translateXPosition, this.state)
         const nextTranslateXPosition = Utils.getTranslate3dPosition(nextItemIndex, this.state)
 
-        Utils.animate(this.stageComponent, { position: nextTranslateXPosition })
+        Utils.animate(this.stageComponent.current, { position: nextTranslateXPosition })
         this._slideToItem(nextItemIndex, { duration: 0, shouldSkipRecalculation: true })
       }
     }, duration)
@@ -542,7 +536,7 @@ export default class AliceCarousel extends React.PureComponent {
       position = Utils.recalculatePositionOnBeforeTouchEnd(slides.length, itemWidth)
     }
 
-    Utils.animate(this.stageComponent, { position, duration, transitionTimingFunction })
+    Utils.animate(this.stageComponent.current, { position, duration, transitionTimingFunction })
 
     this.touchEndAnimation = true
     this.touchEndTimeoutId = setTimeout(() => {
@@ -551,7 +545,7 @@ export default class AliceCarousel extends React.PureComponent {
           return this._handleOnAnimationCanceled()
         }
 
-        Utils.animate(this.stageComponent, { position })
+        Utils.animate(this.stageComponent.current, { position })
         this._slideToItem(currentIndex, { duration: 0, shouldSkipRecalculation: true })
       }
     }, duration)
@@ -608,15 +602,15 @@ export default class AliceCarousel extends React.PureComponent {
 
   render() {
     const { style, translate3d, clones } = this.state
-    const wrapperStyles = Utils.getWrapperStyles(this.stageComponent, this.props, this.state)
+    const wrapperStyles = Utils.getWrapperStyles(this.stageComponent.current, this.props, this.state)
     const stageStyles = Utils.getStageStyles({ translate3d }, style)
     const containerClassName = Utils.containerClassName(this.state)
 
     return (
       <div className={containerClassName}>
-        <div ref={this._setRootComponentRef}>
+        <div ref={this.rootComponent}>
           <div style={wrapperStyles} className="alice-carousel__wrapper">
-            <ul style={stageStyles} className="alice-carousel__stage" ref={this._setStageComponentRef}>
+            <ul style={stageStyles} className="alice-carousel__stage" ref={this.stageComponent}>
               {clones.map(this._renderStageItem)}
             </ul>
           </div>

@@ -29,8 +29,8 @@ export const getStageStyles = (nextStyles = {}, currentStyles = {}) => {
 
 export const getWrapperStyles = (element, props = {}, state = {}) => {
   const { paddingLeft, paddingRight } = Utils.getStagePadding(props)
-  const height = props.autoHeight && Utils.getGalleryItemHeight(element, props, state)
-  const transition = height && `height ${state.duration}ms`
+  const height = props.autoHeight && Utils.getGalleryItemHeight(element, props, state) || undefined
+  const transition = height && `height ${state.duration}ms` || undefined
 
   return {
     height,

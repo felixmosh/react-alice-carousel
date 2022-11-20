@@ -28,3 +28,5 @@ export const containerClassName = (state = {}) => {
   const { isRTL } = state
   return 'alice-carousel' + (isRTL? ' alice-carousel__rtl':'')
 }
+
+// test
